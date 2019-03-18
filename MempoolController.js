@@ -150,6 +150,30 @@ class MempoolController {
       // Add your code here
       let self = this;
       console.log("addStarData req.body: ", req.body)
+      let chkForOneBodyOnlyArray = [];
+      chkForOneBodyOnlyArray.push(req.body);
+      console.log("chkForOneBodyOnlyArray.length : ", chkForOneBodyOnlyArray.length);
+      chkForOneBodyOnlyArray.map( (item, idx ) => {
+        console.log("chkForOneBodyOnlyArray : idx: ", idx, "item: ", item);
+        console.log("chkForOneBodyOnlyArray : item.address: ", item.address);
+        console.log("chkForOneBodyOnlyArray : item.star: ", item.star);
+        let chkForOneStarOnlyArray = [];
+        chkForOneStarOnlyArray.push(item.star);
+        console.log("chkForOneStarOnlyArray.length : ", chkForOneStarOnlyArray.length);
+        console.log("chkForOneBODYOnlyINSIDEoneStarArray.length : ", chkForOneBodyOnlyArray.length);
+        if( ( chkForOneStarOnlyArray.length !== 1 ) &&
+              chkForOneBodyOnlyArray.length !== 1 ) {
+                console.log("Will return here, more than one body or more than one star in a body!!!")
+                res.send("Extra Data in Body or Star... ABORTING!!!");
+                return
+        } else {
+          chkForOneStarOnlyArray.map( (starItem, starIdx) => {
+            console.log( "chkForOneStarOnlyArray: starIndex", starIdx, "(BODY ITEM).address: ", item.address);
+            console.log("chkForOneStarOnlyArray: starItem.dec: ", starItem.dec, "starItem.ra: ", starItem.ra);
+            console.log("chkForOneStarOnlyArray: starItem.story: ", starItem.story);
+          })
+        }
+      })
       const starDataAddr = req.body.address;
       const starDataDEC = req.body.star.dec;
       const starDataRA = req.body.star.ra;

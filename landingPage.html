@@ -10,7 +10,7 @@
 
 
     <form >
-    <p>   Enter Address for Validation Request: <input type="text" id="getAddr4ValReq" placeholder="1B5niobweEWa7VFApb6fZhDN2rGzpZga88" value="1B5niobweEWa7VFApb6fZhDN2rGzpZga88">
+    <p>   Enter Address for Validation Request: <input type="text" id="getAddr4ValReq" placeholder="1B5niobweEWa7VFApb6fZhDN2rGzpZga88" value="">
       <input type="submit" id="submitAddrValReq"></p>
     </form>
     <h4>Address Validation RequestResults: </h4><h5 id="returnedRequestObj"></h5>
@@ -18,7 +18,7 @@
     <br>
 
     <form >
-      <p>   Enter Signature Validation Request: <input type="text" id="getSig4ValReq" placeholder="IP3/ROXPM3uHKd7tia0Wk0LJmvRpovC2VTayQl7VgATrNq/TAVsacMUKCo4trpx4tuwdBL/jpBup4TEj4xooOK0=" value="IP3/ROXPM3uHKd7tia0Wk0LJmvRpovC2VTayQl7VgATrNq/TAVsacMUKCo4trpx4tuwdBL/jpBup4TEj4xooOK0=">
+      <p>   Enter Signature Validation Request: <input type="text" id="getSig4ValReq" placeholder="IP3/ROXPM3uHKd7tia0Wk0LJmvRpovC2VTayQl7VgATrNq/TAVsacMUKCo4trpx4tuwdBL/jpBup4TEj4xooOK0=" value="">
         <input type="submit" id="submitSigValReq"></p>
       </form>
   
@@ -28,10 +28,10 @@
   
     <form >
       <p>   Enter Stars Coordinates And Story: </p>
-      <p>   Enter Stars DEC: <input type="text" id="getStarDEC" placeholder="DEC" value="68 degrees 52 minutes 56.9 seconds "></p>
-      <p>   Enter Stars RA: <input type="text" id="getStarRA" placeholder="RA" value="16h  29m 1.0s"></p>
+      <p>   Enter Stars DEC: <input type="text" id="getStarDEC" placeholder="68 degrees 52 minutes 56.9 seconds " value=""></p>
+      <p>   Enter Stars RA: <input type="text" id="getStarRA" placeholder="16h  29m 1.0s" value=""></p>
       <p>   Enter the text for the Star's Story...</p><br>
-      <textarea rows="6" cols="50" name="blockBody" id="getStarStory" value="Once upon a time..." placeholder="Enter text here..."></textarea>
+      <textarea rows="6" cols="50" maxlength="500" name="blockBody" id="getStarStory" value="Once upon a time..." placeholder="Enter text here..."></textarea>
       <input type="submit" id="submitStarData" >
     </form>
 

@@ -229,7 +229,7 @@ class MempoolController {
           res.send(`No such Block with Hash of: ${hash}`);
           return
         } else {
-          res.send(rtnBlockByHash);
+          res.send(rtnBlockByHashParsed);
         }
       })
       .catch( (err) => {

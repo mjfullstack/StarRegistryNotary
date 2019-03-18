@@ -109,13 +109,15 @@ class LevelSandbox {
             let resultsByHash = [];
             self.db.createReadStream()
             .on('data', function (data) {
-                if ( data.hash === hash ) {
+                let dataParsed = JSON.parse(data.value);
+                if ( dataParsed.hash === hash ) {
                     console.log(`getLevelDBDataByHash: Hash2FIND is: ${hash}`)
-                    console.log(`getLevelDBDataByHash: Blockdata is: ${data}`)
-                    console.log(`getLevelDBDataByHash: BlockHASH is: ${data.hash}`)
+                    console.log(`getLevelDBDataByHash: BlockHASH is: `, dataParsed.hash)
+                    // console.log(`getLevelDBDataByHash: Blockdata is: `, dataParsed)
                     resultsByHash.push(data);
                 } else {
-                    console.log(`getLevelDBDataByHash: Did NOT find HASH: ${hash}`);
+                    // DEBUG LEG
+                    // console.log(`getLevelDBDataByHash: Did NOT find HASH: ${hash}`);
                 }
             })
             .on('error', function (err) {
@@ -138,15 +140,15 @@ class LevelSandbox {
             let resultsByAddr = [];
             self.db.createReadStream()
             .on('data', function (data) {
-                const parsedData = data; // JSON.parse(data);
-                // if ( parsedData.body.address === addr ) {
+                let dataParsed = JSON.parse(data.value);
+                if ( dataParsed.body.address === addr ) {
                     console.log(`getLevelDBDataByAddr: Addr2FIND is: ${addr}`);
-                    console.log(`getLevelDBDataByAddr: BLOCKdata is: `, parsedData);
-                    console.log(`getLevelDBDataByAddr: BlockADDR is: `, parsedData.body);
+                    // console.log(`getLevelDBDataByAddr: BLOCKdata is: `, dataParsed);
+                    console.log(`getLevelDBDataByAddr: BlockADDR is: `, dataParsed.body.address);
                     resultsByAddr.push(data);
-                // } else {
-                //     console.log(`getLevelDBDataByAddr: Did NOT find Wallet Address: ${addr}; data: `, data);
-                // }
+                } else {
+                    // console.log(`getLevelDBDataByAddr: Did NOT find Wallet Address: ${addr}; data: `, data);
+                }
             })
             .on('error', function (err) {
                 console.log('Oh my! getLevelDBDataByAddr saw an error: ', err)

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Star Registry - Web API</title>
+    <!-- Added link to the jQuery library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  </head>
+  <body>
+
+
+    <form >
+    <p>   Enter Address for Validation Request: <input type="text" id="getAddr4ValReq" placeholder="1B5niobweEWa7VFApb6fZhDN2rGzpZga88" value="1B5niobweEWa7VFApb6fZhDN2rGzpZga88">
+      <input type="submit" id="submitAddrValReq"></p>
+    </form>
+    <h4>Address Validation RequestResults: </h4><h5 id="returnedRequestObj"></h5>
+    <hr>
+    <br>
+
+    <form >
+      <p>   Enter Signature Validation Request: <input type="text" id="getSig4ValReq" placeholder="IP3/ROXPM3uHKd7tia0Wk0LJmvRpovC2VTayQl7VgATrNq/TAVsacMUKCo4trpx4tuwdBL/jpBup4TEj4xooOK0=" value="IP3/ROXPM3uHKd7tia0Wk0LJmvRpovC2VTayQl7VgATrNq/TAVsacMUKCo4trpx4tuwdBL/jpBup4TEj4xooOK0=">
+        <input type="submit" id="submitSigValReq"></p>
+      </form>
+  
+      <h4>Signature Validation Results: </h4><h5 id="returnedValidObj"></h5>
+      <hr>
+      <br>
+  
+    <form >
+      <p>   Enter Stars Coordinates And Story: </p>
+      <p>   Enter Stars DEC: <input type="text" id="getStarDEC" placeholder="DEC" value="68 degrees 52 minutes 56.9 seconds "></p>
+      <p>   Enter Stars RA: <input type="text" id="getStarRA" placeholder="RA" value="16h  29m 1.0s"></p>
+      <p>   Enter the text for the Star's Story...</p><br>
+      <textarea rows="6" cols="50" name="blockBody" id="getStarStory" value="Once upon a time..." placeholder="Enter text here..."></textarea>
+      <input type="submit" id="submitStarData" >
+    </form>
+
+    <h4>Star Details Results: </h4><h5 id="returnedStarObj"></h5>
+    <br>
+    <br>
+    <hr>
+    <h4>Additional Functionalities</h4>
+    <hr>
+    <br>
+
+    <!-- Block by Hash -->
+    <form >
+        <p>   Enter Block's HASH to Retrieve: <input type="text" id="getHashValue" value="">
+          <input type="submit" id="getBlockByHashForm"></p>
+    </form>
+    <h4>Block By HASH Results: </h4><h5 id="returnedBlockByHash"></h5>
+    <hr>
+    <br>
+  
+    <!-- Block by Wallet Address -->
+    <form >
+      <p>Enter WALLET ADDRESS to Retrieve Blocks: <input type="text" id="getAddrValue" value="">
+        <input type="submit" id="getBlockByAddrForm"></p>
+    </form>
+    <h4>Block By WALLET ADDRESS Results: </h4><h5 id="returnedBlockByAddr"></h5>
+    <hr>
+    <br>
+
+    <!-- Block by Height -->
+    <form >
+    <p>   Enter Block's HEIGHT to Retrieve: <input type="text" id="getHeightValue" value="">
+      <input type="submit" id="getBlockByHeightForm"></p>
+    </form>
+    <h4>Block By HEIGHT Results: </h4><h5 id="returnedBlockByHeight"></h5>
+    <hr>
+    <br>
+
+    <!-- Clear Page Results Button / Start Over... -->
+    <p><input type="submit" id="goHome" value="Clear Results"></p>
+
+    <script type="text/javascript">
+      
+      $(document).ready( () => { 
+        $("#returnedBlockByHeight").text("");
+        let returnedWalletAddress = "";
+
+        // CLEAR SCREEN / RE-START Process
+        $("#goHome").on("click", (e) => { // Clear Results
+          e.preventDefault();
+          let queryURL = "/";
+          $.ajax({ 
+            url: queryURL,
+            method: "GET",
+            success: (res) => {
+              // console.log("res", res);
+              $("#returnedRequestObj").text("");
+              $("#returnedValidObj").text("");
+              $("#getStarStory").val("");
+              $("#returnedStarObj").text("");
+              $("#getHeightValue").val("");
+              $("#getBlockBody").val("");
+              $("#returnedBlockByHeight").text("");
+              queryURL = "/block";
+            }
+          })
+        });
+
+        // Request WALLET ADDRESS Validation
+        $("#submitAddrValReq").on("click", (e) => {
+          e.preventDefault();
+          $("#getHeightValue").val("");
+          $("#getBlockBody").val("");
+          $("#returnedBlockByHeight").text("");
+          let postURL = "/requestValidation"
+          if ($("#getAddr4ValReq").val() === "" ) {
+            alert("Address is Empty.\nPlease enter the Address to validate...");
+          } else {
+            console.log(`postURL: ${postURL}; $("#getAddr4ValReq").val(): ${$("#getAddr4ValReq").val()} `);
+            $.ajax({ 
+              url: postURL,
+              method: "POST",
+              data: { data: $("#getAddr4ValReq").val() },
+              success: (res) => {
+                console.log("res", JSON.stringify(res, null, 2));
+                returnedWalletAddress = res.walletAddress;
+                console.log(`IN AJAX - submitAddrValReq: returnedWalletAddress: ${returnedWalletAddress}`);
+                $("#returnedRequestObj").text(JSON.stringify(res, null, 2))
+                $("#getBlockBody").val("");
+                $("#getHeightValue").val("");
+                postURL = "";
+              }
+            })
+          }
+        });
+
+        // Request SIGNATURE Validation
+        $("#submitSigValReq").on("click", (e) => {
+          e.preventDefault();
+          $("#getHeightValue").val("");
+          $("#getBlockBody").val("");
+          $("#returnedBlockByHeight").text("");
+          let postURL = "/validate"
+          if ($("#getSig4ValReq").val() === "" ) {
+            alert("Signature is Empty.\nPlease enter the Signature to validate...");
+          } else {
+            console.log(`postURL: ${postURL}; $("#getSig4ValReq").val(): ${$("#getSig4ValReq").val()} `);
+            console.log(`B4 AJAX - submitSigValReq: returnedWalletAddress: ${returnedWalletAddress}`);
+            $.ajax({ 
+              url: postURL,
+              method: "POST",
+              data: { signature: $("#getSig4ValReq").val(),
+                      address: returnedWalletAddress },
+              success: (res) => {
+                console.log("res", JSON.stringify(res, null, 2));
+                console.log(`IN AJAX - submitSigValReq: returnedWalletAddress: ${returnedWalletAddress}`);
+                $("#returnedValidObj").text(JSON.stringify(res, null, 2))
+                $("#getBlockBody").val("");
+                $("#getHeightValue").val("");
+                postURL = "";
+              }
+            })
+          }
+        });
+
+        // ENTER Star Data
+        $("#submitStarData").on("click", (e) => {
+          e.preventDefault();
+          $("#getHeightValue").val("");
+          $("#returnedBlockByHeight").text("");
+          let postURL = "/addStarData";
+          if ($("#getStarStory").val() === "" ) {
+            alert("Block Contents is Empty.\nPlease enter content in text box...");
+          } else if ($("#getStarDEC").val() === "" ) {
+            alert("Star DEC Contents is Empty.\nPlease enter DEC content...");
+          } else if ($("#getStarRA").val() === "" ) {
+            alert("Star RA Contents is Empty.\nPlease enter RA content...");
+          } else {
+            let starData = { 
+              address: returnedWalletAddress,
+              star: {
+                dec: $("#getStarDEC").val(),
+                ra:  $("#getStarRA").val(),
+                story: $("#getStarStory").val()
+              } 
+            }
+            console.log("submitStarData: starData: ", starData);
+            $.ajax({ 
+              url: postURL,
+              method: "POST",
+              data: starData, 
+              success: (res) => {
+                console.log("res", JSON.stringify(res, null, 2));
+                $("#returnedStarObj").text(JSON.stringify(res, null, 2));
+                $("#getHeightValue").val("");
+                postURL = "";
+              },
+              error: function () {
+                alert("AJAX POST response error");
+              }
+            })
+          }
+        })
+
+        // Get Block By HASH
+        $("#getBlockByHashForm").on("click", (e) => {
+          e.preventDefault();
+          $("#getBlockBody").val("");
+          $("#returnedBlockByHash").text("");
+          let queryURL = "/hash/" + $("#getHashValue").val()
+          if ($("#getHashValue").val() === "" ) {
+            alert("HASH value is Empty.\nPlease enter HASH value to retrieve...");
+          } else {
+            $.ajax({ 
+              url: queryURL,
+              method: "GET",
+              success: (res) => {
+                console.log("res", JSON.stringify(res, null, 2));
+                $("#returnedBlockByHash").text(JSON.stringify(res, null, 2))
+                $("#getBlockBody").val("");
+                queryURL = "";
+              }
+            })
+          }
+        });
+
+        // Get Block By WALLET ADDRESS
+        $("#getBlockByAddrForm").on("click", (e) => {
+          e.preventDefault();
+          $("#getBlockBody").val("");
+          $("#returnedBlockByAddr").text("");
+          let queryURL = "/addr/" + $("#getAddrValue").val()
+          if ($("#getAddrValue").val() === "" ) {
+            alert("WALLET ADDRESS is Empty.\nPlease enter WALLET ADDRESS to retrieve...");
+          } else {
+            $.ajax({ 
+              url: queryURL,
+              method: "GET",
+              success: (res) => {
+                console.log("res", JSON.stringify(res, null, 2));
+                $("#returnedBlockByAddr").text(JSON.stringify(res, null, 2))
+                $("#getBlockBody").val("");
+                queryURL = "";
+              }
+            })
+          }
+        });
+
+        // Get Block By Height
+        $("#getBlockByHeightForm").on("click", (e) => {
+          e.preventDefault();
+          $("#getBlockBody").val("");
+          $("#returnedBlockByHeight").text("");
+          let queryURL = "/block/" + $("#getHeightValue").val()
+          if ($("#getHeightValue").val() === "" ) {
+            alert("Block Number is Empty.\nPlease enter Block Number to retrieve...");
+          } else {
+            $.ajax({ 
+              url: queryURL,
+              method: "GET",
+              success: (res) => {
+                console.log("res", JSON.stringify(res, null, 2));
+                $("#returnedBlockByHeight").text(JSON.stringify(res, null, 2))
+                $("#getBlockBody").val("");
+                queryURL = "";
+              }
+            })
+          }
+        });
+
+      });
+      
+    </script>
+  </body>
+  </html>

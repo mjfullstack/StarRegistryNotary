@@ -162,14 +162,17 @@ class MempoolController {
         console.log("addStarData: starDataAddr: ", starDataAddr)
         console.log("addStarData: self.mempoolValid[starDataAddr]: ", self.mempoolValid[starDataAddr]);
         console.log("addStarData: self.mempoolValid[starDataAddr].registerStar: ", self.mempoolValid[starDataAddr].registerStar);
-        console.log("addStarData: self.mempoolValid[starDataAddr].messageSignature: ", self.mempoolValid[starDataAddr].messageSignature);
+        console.log("addStarData: self.mempoolValid[starDataAddr].status.messageSignature: ", self.mempoolValid[starDataAddr].status.messageSignature);
         if ( self.mempoolValid[starDataAddr].registerStar &&
-             self.mempoolValid[starDataAddr].messageSignature ) {
+             self.mempoolValid[starDataAddr].status.messageSignature ) {
               validateAddrState = true;
-              console.log("addStarData: validateAddrState", validateAddrState);
+              console.log("addStarData: validateAddrState S/B true: ", validateAddrState);
+        } else {
+          console.log("addStarData: validateAddrState S/B false: ", validateAddrState);
         }
       } else {
         console.log("addStarData: self.mempoolValid[starDataAddr] NOT FOUND!!!");
+        console.log("addStarData: validateAddrState S/B false: ", validateAddrState);
       }
       let chkForOneBodyOnlyArray = [];
       chkForOneBodyOnlyArray.push(req.body);
@@ -246,9 +249,10 @@ class MempoolController {
    * Implement a GET Endpoint to retrieve a block by HASH
    */
   getBlockByHash() {
-    this.app.get("/hash/:hash", (req, res) => {
+    this.app.get("/stars/hash:hash", (req, res) => {
       // Add your code here
       let hash = req.params.hash;
+      console.log("hash: :", hash)
       myBlockChain.getBlockByHash(hash).then( (rtnBlockByHash) => {
         let rtnBlockByHashParsed = [];
         rtnBlockByHash.map ( (item, idx) => {
@@ -282,9 +286,10 @@ class MempoolController {
    * Implement a GET Endpoint to retrieve a block by WALLET ADDRESS
    */
   getBlockByAddr() {
-    this.app.get("/addr/:addr", (req, res) => {
+    this.app.get("/stars/address:addr", (req, res) => {
       // Add your code here
       let addr = req.params.addr;
+      console.log("addr: ", addr);
       myBlockChain.getBlockByAddr(addr).then( (rtnBlockByAddr) => {
         let rtnBlockByAddrParsed = [];
         rtnBlockByAddr.map( (item, idx)  => {

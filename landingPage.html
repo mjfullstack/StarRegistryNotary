@@ -206,7 +206,7 @@
           e.preventDefault();
           $("#getBlockBody").val("");
           $("#returnedBlockByHash").text("");
-          let queryURL = "/hash/" + $("#getHashValue").val()
+          let queryURL = "/stars/hash" + $("#getHashValue").val()
           if ($("#getHashValue").val() === "" ) {
             alert("HASH value is Empty.\nPlease enter HASH value to retrieve...");
           } else {
@@ -228,7 +228,7 @@
           e.preventDefault();
           $("#getBlockBody").val("");
           $("#returnedBlockByAddr").text("");
-          let queryURL = "/addr/" + $("#getAddrValue").val()
+          let queryURL = "/stars/address" + $("#getAddrValue").val()
           if ($("#getAddrValue").val() === "" ) {
             alert("WALLET ADDRESS is Empty.\nPlease enter WALLET ADDRESS to retrieve...");
           } else {

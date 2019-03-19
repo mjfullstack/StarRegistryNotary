@@ -134,7 +134,7 @@
           $("#getHeightValue").val("");
           $("#getBlockBody").val("");
           $("#returnedBlockByHeight").text("");
-          let postURL = "/validate"
+          let postURL = "/message-signature/validate"
           if ($("#getSig4ValReq").val() === "" ) {
             alert("Signature is Empty.\nPlease enter the Signature to validate...");
           } else {
@@ -162,7 +162,7 @@
           e.preventDefault();
           $("#getHeightValue").val("");
           $("#returnedBlockByHeight").text("");
-          let postURL = "/addStarData";
+          let postURL = "/block";
           if ($("#getStarStory").val() === "" ) {
             alert("Block Contents is Empty.\nPlease enter content in text box...");
           } else if ($("#getStarDEC").val() === "" ) {
@@ -184,10 +184,15 @@
               method: "POST",
               data: starData, 
               success: (res) => {
-                console.log("res", JSON.stringify(res, null, 2));
-                $("#returnedStarObj").text(JSON.stringify(res, null, 2));
-                $("#getHeightValue").val("");
-                postURL = "";
+                console.log("res.blockIsValid: ", res.blockIsValid);
+                if ( res.blockIsValid ) {
+                  console.log("res", JSON.stringify(res, null, 2));
+                  $("#returnedStarObj").text(JSON.stringify(res, null, 2));
+                  $("#getHeightValue").val("");
+                  postURL = "";
+                } else {
+                  alert("ERROR: Address is NOT a validated signature. Please Start Again!");
+                }
               },
               error: function () {
                 alert("AJAX POST response error");

@@ -71,18 +71,10 @@ class MempoolController {
         console.log("PUT IN: self.tempMempool[newAddrValReq.walletAddress]: ", self.tempMempool[newAddrValReq.walletAddress]);
         // Set Timeout and Place in timeoutReqs ARRAY
         self.timeoutReqs[newAddrValReq.walletAddress] =  setTimeout( () => {
-          // console.log("BEFORE: self.timeoutReqs[newAddrValReq.walletAddress]: ", self.timeoutReqs[newAddrValReq.walletAddress]);
-          // console.log("BEFORE: self.tempMempool[newAddrValReq.walletAddress]: ", self.tempMempool[newAddrValReq.walletAddress]);
-          // self.timeoutReqs[newAddrValReq.walletAddress] = null;
-          // console.log(`\nAddress Validation Request Timed Out!\n`);
-          // console.log("self.timeoutReqs[newAddrValReq.walletAddress]: ", self.timeoutReqs[newAddrValReq.walletAddress]);
-          // console.log("self.tempMempool[newAddrValReq.walletAddress]: ", self.tempMempool[newAddrValReq.walletAddress]);
-          // self.tempMempool[newAddrValReq.walletAddress] = null;
         }, timeRemaining);
-        // console.log("self.timeoutReqs[newAddrValReq.walletAddress]: ", self.timeoutReqs[newAddrValReq.walletAddress]);
         res.send(newAddrValReq);
         /*****************************************
-         * TODO: Re-Factor timeout code...
+         * Re-Factored timeout code...
          * 
          *****************************************/
         self.callDisplayArrays(60000, 5, self.tempMempool, self.timeoutReqs, self.mempoolValid, newAddrValReq.walletAddress);
@@ -93,7 +85,7 @@ class MempoolController {
 
   // Request SIGNATURE Validation
   sigRequestValidation() {
-    this.app.post("/validate", (req, res) => {
+    this.app.post("/message-signature/validate", (req, res) => {
       // Add your code here
       let self = this;
       const sigVerAddr = req.body.address;
@@ -146,10 +138,39 @@ class MempoolController {
 
   // Add NEW STAR to BLOCKCHAIN
   addStarData() {
-    this.app.post("/addStarData", (req, res) => {
+    this.app.post("/block", (req, res) => {
       // Add your code here
       let self = this;
+      let validateAddrState = false;
       console.log("addStarData req.body: ", req.body)
+      const starDataAddr = req.body.address;
+      const starDataDEC = req.body.star.dec;
+      const starDataRA = req.body.star.ra;
+      const starDataStory = req.body.star.story;
+      console.log("addStarData: starDataAddr: ", starDataAddr);
+      console.log("addStarData: starDataDEC: ", starDataDEC);
+      console.log("addStarData: starDataRA: ", starDataRA);
+      console.log("addStarData: starDataStory: ", starDataStory);
+
+      /*****************************************
+       * Check for only ONE STAR per request
+       * to add a block to the chain...
+       * 
+       *****************************************/
+
+      if ( self.mempoolValid[starDataAddr] ) {
+        console.log("addStarData: starDataAddr: ", starDataAddr)
+        console.log("addStarData: self.mempoolValid[starDataAddr]: ", self.mempoolValid[starDataAddr]);
+        console.log("addStarData: self.mempoolValid[starDataAddr].registerStar: ", self.mempoolValid[starDataAddr].registerStar);
+        console.log("addStarData: self.mempoolValid[starDataAddr].messageSignature: ", self.mempoolValid[starDataAddr].messageSignature);
+        if ( self.mempoolValid[starDataAddr].registerStar &&
+             self.mempoolValid[starDataAddr].messageSignature ) {
+              validateAddrState = true;
+              console.log("addStarData: validateAddrState", validateAddrState);
+        }
+      } else {
+        console.log("addStarData: self.mempoolValid[starDataAddr] NOT FOUND!!!");
+      }
       let chkForOneBodyOnlyArray = [];
       chkForOneBodyOnlyArray.push(req.body);
       console.log("chkForOneBodyOnlyArray.length : ", chkForOneBodyOnlyArray.length);
@@ -174,20 +195,6 @@ class MempoolController {
           })
         }
       })
-      const starDataAddr = req.body.address;
-      const starDataDEC = req.body.star.dec;
-      const starDataRA = req.body.star.ra;
-      const starDataStory = req.body.star.story;
-      console.log("addStarData: starDataAddr: ", starDataAddr);
-      console.log("addStarData: starDataDEC: ", starDataDEC);
-      console.log("addStarData: starDataRA: ", starDataRA);
-      console.log("addStarData: starDataStory: ", starDataStory);
-
-        /*****************************************
-       * TODO: Check for only ONE STAR per request
-       * to add a block to the chain...
-       * 
-       *****************************************/
       let blockBody = {
         address: starDataAddr,
         star: {
@@ -203,17 +210,25 @@ class MempoolController {
           blockNew.height = totalHeight;
           blockNew.hash = SHA256(JSON.stringify(blockNew)).toString();
           console.log(`blockNew: `, blockNew);
-          myBlockChain.addBlock(blockNew).then( (addedBlock) => {
-            // Add DECODED story as property to object returned...
-            addedBlock.body.star.storyDECODED = hex2ascii(addedBlock.body.star.storyENCODED);
-            console.log("then #1: addStarData: addedBlock: ", addedBlock);
-            res.send(addedBlock);
-          // }).then( (addedBlock) => {
-          //   console.log("then #2: addStarData: addedBlock: ", addedBlock);
-          })
-          .catch((error) => {
-            console.log("addStarData saw error", error);
-          });
+          if ( validateAddrState ) {
+            myBlockChain.addBlock(blockNew).then( (addedBlock) => {
+              // Add valid state to block being sent to frontend
+              addedBlock.blockIsValid = true;
+              // Add DECODED story as property to object returned...
+              addedBlock.body.star.storyDECODED = hex2ascii(addedBlock.body.star.storyENCODED);
+              console.log("then #1: addStarData: addedBlock: ", addedBlock);
+              res.send(addedBlock);
+            })
+            .catch((error) => {
+              console.log("addStarData saw error", error);
+            });
+          } else {
+              // Add valid state to block being sent to frontend
+              blockNew.blockIsValid = false;
+              blockNew.body.star.storyDECODED = "ERROR: Address has not been validated!";
+              blockNew.hash = "ERROR: Address has not been validated!";
+              res.send( blockNew) ;
+          }
         })
       }
       catch (err) {
@@ -330,23 +345,6 @@ class MempoolController {
   }
 
 
-  // setAddrValReqTimeout(addrValReqObj) {
-  //   let self = this;
-  //     // Calculate time values
-  //     const currentTime = new Date().getTime().toString().slice(0,3);
-  //     // const timeElapsed = currentTime - addrValReqObj.reqTimeStamp;
-  //     // const timeRemaining = addrValReqObj.validationWindow/1000 - timeElapsed; 
-    
-  //   self.timeoutReqs[addrValReqObj.walletAddress] = setTimeout( () => {
-  //     self.removeValidationReq(addrValReqObj.walletAddress)},
-  //     timeRemaining);
-  // } 
-
-  // removeValidationReq(addr) {
-  //   let self = this;
-  //   self.tempMempool[addr] = null;
-  //   self.timeoutReqs[addr] = null;
-  // }
 
   callDisplayArrays(delay, count, arr1, arr2, arr3, walletAddress) {
     (function theLoop (i) {
@@ -375,7 +373,7 @@ class MempoolController {
   }
 
   landingPage() {
-    this.app.get(["/", "/block"], (req, res) => {
+    this.app.get("/", (req, res) => {
       // console.log(`request.body: `, req.body);
       // Basic route that sends the user first to the Landing Page
       res.sendFile(path.join(__dirname, "landingPage.html"));

@@ -13,8 +13,8 @@ Udacity Project 4, Notary / Star Registry
     This is due to a dependency in this package requiring local compilation that's not really required.
 3. Run npm install
 4. Execute via node (or nodemon) app.js
-5. Runs on localhost:8000/ or localhost:8000/block
-6. Open web browser to either of the above
+5. Runs on localhost:8000/
+6. Open web browser to the above
 7. Enter Address for Validation Request at TOP of page. Click Submit. (Note: Work from Top to Bottom of the page to perform tests.)
 8. Copy message from "Address Validation Request Results" response area on screen and to perform a sign/verify using the Electrum Wallet.
 9. Paste the wallet's signature into the box labeled "Enter Signature Validation Request". Click Submit.

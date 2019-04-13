@@ -137,6 +137,7 @@ class MempoolController {
       let self = this;
       const sigVerAddr = req.body.address;
       const sigVerSig = req.body.signature;
+      let sigVerStatus = 200;
       if ( self.tempMempool[sigVerAddr] ) {
         const sigVerMsg  = self.tempMempool[sigVerAddr].message
         console.log("sigRequestValidation: self.tempMempool[sigVerAddr].walletAddress: ", self.tempMempool[sigVerAddr].walletAddress);
@@ -149,42 +150,53 @@ class MempoolController {
         /*****************************************
          *  Signature Verification code...
          *****************************************/
-        try {
-          let sigIsValid = bitcoinMessage.verify(sigVerMsg, sigVerAddr, sigVerSig); // Library call...
-          console.log(`sigRequestValidation: sigIsValid: ${sigIsValid}`)
-          if ( sigIsValid ) {
-            // Set Return Message Contents
-            let validAddrObj = new ValidatedAddrObj.ValidatedAddrObj(sigVerAddr); // Verified Address from req.body
-            console.log("sigRequestValidation: validAddrObj: ", validAddrObj);
-            // Put MemObj in Mempool ARRAY
-            self.mempoolValid[sigVerAddr] = validAddrObj;
-            console.log("PUT IN: sigRequestValidation: self.mempoolValid[sigVerAddr]: ", self.mempoolValid[sigVerAddr]);
-            res.send(validAddrObj);
-            // self.tempMempool[sigVerAddr] = null;
-            // self.timeoutReqs[sigVerAddr] = null;
-            let currentTimeSigValid = new Date().getTime().toString().slice(0, -3);
-            console.log(`sigRequestValidation: REMOVE TIMER... currentTimeSigValid: ${currentTimeSigValid}`);
-            self.removeAddrVailidationReq(sigVerAddr);
-        } else {
-            res.send("Signature NOT valid!\n \
-            Re-enter Signature or\n \
-            Re-start with Address Verification step");
-          }
+        try { // Library call...
+          let sigIsValid = bitcoinMessage.verify(sigVerMsg, sigVerAddr, sigVerSig).then( () => {
+            console.log(`sigRequestValidation: sigIsValid: ${sigIsValid}`)
+            if ( sigIsValid ) {
+              // Check Time Window...
+              let currentTimeSigValid = new Date().getTime().toString().slice(0, -3);
+              console.log(`sigRequestValidation: STORE VALID OBJECT and REMOVE TIMER... currentTimeSigValid: ${currentTimeSigValid}`);
+              let timeElapsedSigValid = currentTimeSigValid - self.tempMempool[addr].reqTimeStamp; // ORIG Req Start Time
+              let timeRemainingSigValid = self.tempMempool[addr].validationWindow - timeElapsedSigValid; 
+              console.log(`timeElapsedSigValid: ${timeElapsedSigValid}; timeRemainingSigValid: ${timeRemainingSigValid}`);
+              // ONLY if BOTH Sig Valid and within the validationWindow of 5 minutes...
+              if ( timeRemainingSigValid > 0 ){
+                // Set Return Message Contents
+                let validAddrObj = new ValidatedAddrObj.ValidatedAddrObj(sigVerAddr); // Verified Address from req.body
+                validAddrObj.validationWindow = timeRemainingSigValid;
+                console.log("sigRequestValidation: validAddrObj: ", validAddrObj);
+                // Put MemObj in Mempool ARRAY
+                self.mempoolValid[sigVerAddr] = validAddrObj;
+                console.log("PUT IN: sigRequestValidation: self.mempoolValid[sigVerAddr]: ", self.mempoolValid[sigVerAddr]);
+                res.status(sigVerStatus).send(validAddrObj);
+                self.removeAddrVailidationReq(sigVerAddr);
+              }
+            } else {
+              res.status(sigVerStatus).send("Signature NOT valid!\n \
+                Signature NOT valid!\n \
+                Re-enter Signature or\n \
+                Re-start with Address Verification step");
+            }
+          }); // End of THEN after Library call...
         }
         catch (error) { 
           if (error) {
-            console.log("bitcoinMessage.verify saw error: ", error);
-            res.send("bitcoinMessage.verify saw error: ", error);
+            sigVerStatus = 412; // Precondition Failed, my choice since error.status was undefined
+            console.log("bitcoinMessage.verify saw error: ", sigVerStatus);
+            res.status(sigVerStatus).send({ sigVerError: "bitcoinMessage.verify saw error: 'Precondition Failed'-MWJ " });
           }
         }
       } else {
+        sigVerStatus = 408;
         console.log("sigRequestValidation TIMED OUT!\n \
         Re-start with Address Verification step");
-        res.send("Signature Validation Timed Out!\n \
+        res.status(sigVerStatus).send("Signature Validation Timed Out!\n \
         Re-start with Address Verification step");
       }
     }) // ends this.app.get
   } // ends sigRequestValidation
+  // ADDR: 1B5niobweEWa7VFApb6fZhDN2rGzpZga88
 
   /**
    *  Add NEW STAR to BLOCKCHAIN

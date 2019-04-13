@@ -25,6 +25,7 @@ class MempoolController {
     this.timeoutReqs = [];
     this.mempoolValid = [];
     this.addrRequestValidation();
+    // this.removeAddrVailidationReq();
     this.sigRequestValidation();
     this.addStarData();
     this.getBlockByHash();
@@ -33,57 +34,103 @@ class MempoolController {
     // this.removeValidationReq();
     // this.setAddrValReqTimeout();
     this.landingPage();
-
   }
 
-  // Request WALLET ADDRESS Validation
+  /**
+   *  Request WALLET ADDRESS Validation
+   */
   addrRequestValidation() {
     this.app.post("/requestValidation", (req, res) => {
       // Add your code here
+      let addr = req.body.address; // Correct
+      console.log("addr::", addr);
       let self = this;
-      let newAddrValReq = new MemObj.MemObj(req.body.data); // Wallet Address from req.body
-      console.log(`newAddrValReq.reqTimeStamp at NEW: ${newAddrValReq.reqTimeStamp}`);
-//////// console.log(`req.requestTimeStamp: ${req.requestTimeStamp}`); // UNDEFINED
-      const currentTime = new Date().getTime().toString().slice(0, -3);
-      console.log(`currentTime: ${currentTime}`); // Same as NEW ABOVE
-      console.log("req.body.data: ", req.body.data); // Wallet Address
       /*****************************************
        * Check if this is the same address
        * being re-submitted within timeout period...
        *****************************************/
-      if ( self.tempMempool[req.body.data] ) {
-        const resStatus = "This wallet address is already in the address validation queue. Existing Request: ";
-        const status = 200;
-        const resBody = self.tempMempool[req.body.data];
-        resBody.warning = resStatus;
-        console.log(resStatus, resBody.walletAddress);
-        res.status(status).send(resBody);
-        return
-      } else {
-        // Set Return Message Contents
-        // newAddrValReq.walletAddress = req.body.data; // PASSED ABOVE!!!
-        console.log(`newAddrValReq.message: ${newAddrValReq.message}`);
-        const timeElapsed = currentTime - newAddrValReq.reqTimeStamp;
-        const timeRemaining = newAddrValReq.validationWindow/1000 - timeElapsed; 
+      console.log("addrRequestValidation self.tempMempool[addr]: ", self.tempMempool[addr] );
+      if ( self.tempMempool[addr] ) {
+        let resStatus = "This wallet address is already in the address validation queue. Existing Request: ";
+        let status = 200;
+        let currentTime = new Date().getTime().toString().slice(0, -3);
+        console.log(`currentTime: ${currentTime}`);
+        let timeElapsed = currentTime - self.tempMempool[addr].reqTimeStamp;
+        let timeRemaining = self.tempMempool[addr].validationWindow - timeElapsed; 
         console.log(`timeElapsed: ${timeElapsed}; timeRemaining: ${timeRemaining}`);
+        // const resBody = JSON.parse(JSON.stringify(self.tempMempool[addr])); // LOST ADDR
+        let resBody = new MemObj.MemObj(addr); // Wallet Address from req.body.address
+        resBody.reqTimeStamp = self.tempMempool[addr].reqTimeStamp;
+        resBody.message = self.tempMempool[addr].message;
+        if (timeRemaining > 0) {
+          resBody.validationWindow = timeRemaining;
+          console.log("resBody.validationWindow: ", resBody.validationWindow, "resBody.walletAddress: ", resBody.walletAddress);
+          console.log("self.tempMempool[addr].validationWindow: ", self.tempMempool[addr].validationWindow);
+          resBody.warning = resStatus;
+          console.log(resStatus, resBody.walletAddress);
+          res.status(status).send(resBody);
+          return
+        } else {  // For the case where the validationWindow is designed to be less than
+                  // the associated timer (For Testing... not executed in this project...)
+          let currentResubmitTimeout = new Date().getTime().toString().slice(0, -3);
+          console.log(`addrRequestValidation: On-Click - REMOVE TIMER... currentResubmitTimeout: ${currentResubmitTimeout}`);
+          resBody.validationWindow = 0;
+          self.removeAddrVailidationReq(addr);
+          console.log("Now send response for 'Request timed out... ' ");
+          status = 408;
+          resStatus = "This wallet address Request timed out... ";
+          console.log(resStatus, resBody.walletAddress);
+          res.status(status).send(resBody);
+          return
+        }
+      } else {
+        let newAddrValReq = new MemObj.MemObj(addr); // Wallet Address from req.body.address
+        console.log(`newAddrValReq.reqTimeStamp at NEW: ${newAddrValReq.reqTimeStamp}`);
+        // Set Return Message Contents
+        console.log(`newAddrValReq.message: ${newAddrValReq.message}`);
         // Put MemObj in Mempool ARRAY
         self.tempMempool[newAddrValReq.walletAddress] = newAddrValReq;
         console.log("PUT IN: self.tempMempool[newAddrValReq.walletAddress]: ", self.tempMempool[newAddrValReq.walletAddress]);
         // Set Timeout and Place in timeoutReqs ARRAY
-        self.timeoutReqs[newAddrValReq.walletAddress] =  setTimeout( () => {
-        }, timeRemaining);
+        console.log("newAddrValReq.validationWindow: ", newAddrValReq.validationWindow);
+        let toReqsDelay = newAddrValReq.validationWindow;
+        console.log("toReqsDelay: ", toReqsDelay);
+        ////  NO TIMER SET HERE, SEE BELOW   /////
+        // self.timeoutReqs[newAddrValReq.walletAddress] =  setTimeout( function () {
+        //   self.removeAddrVailidationReq.bind(self, newAddrValReq.walletAddress);
+        // }, toReqsDelay * 1000 ); // 30 VS 60 seconds for debug
+        ////  NO TIMER SET HERE, SEE BELOW   /////
         res.send(newAddrValReq);
-        /*****************************************
-         * Re-Factored timeout code...
-         * 
-         *****************************************/
+        // Display Timer, 1 second interval updates to console.log on node server.
+        // TIMER SET / PUT INTO ARRAY INSIDE THIS CALL HERE...
         self.callDisplayArrays(60000, 5, self.tempMempool, self.timeoutReqs, self.mempoolValid, newAddrValReq.walletAddress);
       }
     }) // ends this.app.get
   } // ends addrRequestValidation
+  // ADDR: 1B5niobweEWa7VFApb6fZhDN2rGzpZga88
 
+  /**
+   *  REMOVE wallet address Validation Request
+   */
+  removeAddrVailidationReq(walletAddress) {
+    // Re-Factored timeout code...
+    let self = this;
+    console.log("Re-Factored timeout code...");
+    // console.log("toReqsDelay: ", toReqsDelay);
+    let currentTimeRAddrValReq = new Date().getTime().toString().slice(0, -3);
+    console.log(`currentTimeRAddrValReq: ${currentTimeRAddrValReq}`);
+    console.log("BEFORE NULL: self.tempMempool[newAddrValReq.walletAddress]: ", self.tempMempool[walletAddress]);
+    console.log("BEFORE NULLself.timeoutReqs[newAddrValReq.walletAddress]: ", self.timeoutReqs[walletAddress]);
+    console.log("addrRequestValidation TIMEOUT!!! Clear both tempMempool and timeoutReqs since time has expired");
+    self.tempMempool[walletAddress] = null; // Clear both once time has expired
+    self.timeoutReqs[walletAddress] = null;
+    console.log("AFTER  NULL: self.tempMempool[newAddrValReq.walletAddress]: ", self.tempMempool[walletAddress]);
+    console.log("AFTER  NULL: self.timeoutReqs[newAddrValReq.walletAddress]: ", self.timeoutReqs[walletAddress]);
+  }
 
-  // Request SIGNATURE Validation
+  /**
+   *  Request SIGNATURE Validation
+   */
   sigRequestValidation() {
     this.app.post("/message-signature/validate", (req, res) => {
       // Add your code here
@@ -114,7 +161,10 @@ class MempoolController {
             console.log("PUT IN: sigRequestValidation: self.mempoolValid[sigVerAddr]: ", self.mempoolValid[sigVerAddr]);
             res.send(validAddrObj);
             // self.tempMempool[sigVerAddr] = null;
-            self.timeoutReqs[sigVerAddr] = null;
+            // self.timeoutReqs[sigVerAddr] = null;
+            let currentTimeSigValid = new Date().getTime().toString().slice(0, -3);
+            console.log(`sigRequestValidation: REMOVE TIMER... currentTimeSigValid: ${currentTimeSigValid}`);
+            self.removeAddrVailidationReq(sigVerAddr);
         } else {
             res.send("Signature NOT valid!\n \
             Re-enter Signature or\n \
@@ -136,7 +186,9 @@ class MempoolController {
     }) // ends this.app.get
   } // ends sigRequestValidation
 
-  // Add NEW STAR to BLOCKCHAIN
+  /**
+   *  Add NEW STAR to BLOCKCHAIN
+   */
   addStarData() {
     this.app.post("/block", (req, res) => {
       // Add your code here
@@ -319,7 +371,7 @@ class MempoolController {
   }
 
 
-/**
+  /**
    * Implement a GET Endpoint to retrieve a block by HEIGHT
    */
   getBlockByIndex() {
@@ -348,26 +400,32 @@ class MempoolController {
       })
     })
   }
+  // ADDR: 1B5niobweEWa7VFApb6fZhDN2rGzpZga88
 
-
-
+  /**
+   *  TIMER / Monitor Timeouts as it counts down
+   */
   callDisplayArrays(delay, count, arr1, arr2, arr3, walletAddress) {
-    (function theLoop (i) {
+    let self = this;
+    self.timeoutReqs[walletAddress] =  (function theLoop (i) {
       setTimeout(function () {
         // alert("Cheese!");
-        let self = this;
         console.log("The Cheese #"+i+"!");
-        console.log("ARR_1: self.tempMempool[walletAddress]: ", arr1[walletAddress]);
-        console.log("ARR_2: self.timeoutReqs[walletAddress]: ", arr2[walletAddress]);
-        console.log("ARR_3: self.mempoolValid[walletAddress]: ", arr3[walletAddress]);
-        if (--i) {          // If i > 0, keep going
-          if (i === 1) {
-            arr1[walletAddress] = null;
-            arr2[walletAddress] = null;
+        let currentTimeCheese = new Date().getTime().toString().slice(0, -3);
+        console.log(`callDisplayArrays i=${i}: currentTimeCheese: ${currentTimeCheese}`);
+        // console.log("ARR_1: self.tempMempool[walletAddress]: ", arr1[walletAddress]);
+        // console.log("ARR_2: self.timeoutReqs[walletAddress]: ", arr2[walletAddress]);
+        // console.log("ARR_3: self.mempoolValid[walletAddress]: ", arr3[walletAddress]);
+        if (i--) {          // If i > 0, keep going
+          if (i === 0) {
+            console.log(`callDisplayArrays i=${i}: TIMEOUT, INSIDE i === 0: currentTimeCheese: ${currentTimeCheese}`);
+            self.removeAddrVailidationReq(walletAddress);
+            // arr1[walletAddress] = null;
+            // arr2[walletAddress] = null;
           }
           if (  (arr1[walletAddress] === null) ||
                 (arr2[walletAddress] === null) ) {
-            console.log("callDisplayArrays: Timer Exiting...")
+            console.log(`callDisplayArrays i=${i}: Saw Nulls, Timer Exiting... currentTimeCheese: ${currentTimeCheese};`);
             return
           // } else {
           }
@@ -377,6 +435,9 @@ class MempoolController {
     })(count); // SELF-CALLING!!!
   }
 
+  /**
+   *  First Page hit / served when URL is hit
+   */
   landingPage() {
     this.app.get("/", (req, res) => {
       // console.log(`request.body: `, req.body);

@@ -9,7 +9,7 @@ class ValidatedAddrObj {
       walletAddress : addr,
       message : addr + ":StarRegistry",
       reqTimeStamp : new Date().getTime().toString().slice(0, -3),
-      validationWindow : 4*60*1000, // 4 minutes in millisecond resolution
+      validationWindow : 4*60, // 4 minutes in second resolution
       messageSignature : true
     }
   }

@@ -10,7 +10,7 @@
 
 
     <form >
-    <p>   Enter Address for Validation Request: <input type="text" id="getAddr4ValReq" placeholder="1B5niobweEWa7VFApb6fZhDN2rGzpZga88" value="">
+    <p>   Enter Address for Validation Request: <input type="text" id="getAddr4ValReq" placeholder="" value="">
       <input type="submit" id="submitAddrValReq"></p>
     </form>
     <h4>Address Validation Request Results: </h4><h5 id="returnedRequestObj"></h5>
@@ -135,17 +135,17 @@
               error: function (err) {
                 console.log("WALLET ADDRESS Validation AJAX POST response error: ", err.status, "(", err.statusText, ")");
                 // alert("WALLET ADDRESS Validation AJAX POST response error: ", err.status, "(", err.statusText, ")");
-                $("#getAddr4ValReq").text("");
+                $("#getAddr4ValReq").val("");
                 $("#returnedRequestObj").text("");
-                $("#getSig4ValReq").text("");
+                $("#getSig4ValReq").val("");
                 $("#returnedValidObj").text("");
                 $("#getStarDEC").val("");
                 $("#getStarRA").val("");
                 $("#getStarStory").val("");
                 $("#returnedStarObj").text("");
-                $("#getHashValue").text("");
+                $("#getHashValue").val("");
                 $("#returnedBlockByHash").text("");
-                $("#getAddrValue").text("");
+                $("#getAddrValue").val("");
                 $("#returnedBlockByAddr").text("");
                 $("#getHeightValue").val("");
                 $("#returnedBlockByHeight").text("");

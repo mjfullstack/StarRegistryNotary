@@ -137,6 +137,19 @@ class MempoolController {
       let self = this;
       const sigVerAddr = req.body.address;
       const sigVerSig = req.body.signature;
+      let madeItInTime;
+      let currentTimeSigValid = new Date().getTime().toString().slice(0, -3);
+      console.log(`sigRequestValidation: ADD VALID OBJECT and REMOVE TIMER... currentTimeSigValid: ${currentTimeSigValid}`);
+      let timeElapsedSigValid = currentTimeSigValid - self.tempMempool[sigVerAddr].reqTimeStamp;
+      let timeRemainingSigValid = self.tempMempool[sigVerAddr].validationWindow - timeElapsedSigValid; 
+      console.log(`timeElapsedSigValid: ${timeElapsedSigValid}; timeRemainingSigValid: ${timeRemainingSigValid}`);
+      if ( timeRemainingSigValid > 0 ) {
+        madeItInTime = true;
+        console.log("sigRequestValidation: Made it in time!")
+      } else {
+        madeItInTime = true;
+        console.log("sigRequestValidation: Ouch! TOO SLOW!!!")
+      }
       if ( self.tempMempool[sigVerAddr] ) {
         const sigVerMsg  = self.tempMempool[sigVerAddr].message
         console.log("sigRequestValidation: self.tempMempool[sigVerAddr].walletAddress: ", self.tempMempool[sigVerAddr].walletAddress);
@@ -152,9 +165,10 @@ class MempoolController {
         try {
           let sigIsValid = bitcoinMessage.verify(sigVerMsg, sigVerAddr, sigVerSig); // Library call...
           console.log(`sigRequestValidation: sigIsValid: ${sigIsValid}`)
-          if ( sigIsValid ) {
+          if ( sigIsValid && madeItInTime) {
             // Set Return Message Contents
             let validAddrObj = new ValidatedAddrObj.ValidatedAddrObj(sigVerAddr); // Verified Address from req.body
+            validAddrObj.status.validationWindow = timeRemainingSigValid;
             console.log("sigRequestValidation: validAddrObj: ", validAddrObj);
             // Put MemObj in Mempool ARRAY
             self.mempoolValid[sigVerAddr] = validAddrObj;
@@ -162,8 +176,6 @@ class MempoolController {
             res.send(validAddrObj);
             // self.tempMempool[sigVerAddr] = null;
             // self.timeoutReqs[sigVerAddr] = null;
-            let currentTimeSigValid = new Date().getTime().toString().slice(0, -3);
-            console.log(`sigRequestValidation: REMOVE TIMER... currentTimeSigValid: ${currentTimeSigValid}`);
             self.removeAddrVailidationReq(sigVerAddr);
         } else {
             res.send("Signature NOT valid!\n \
@@ -185,6 +197,7 @@ class MempoolController {
       }
     }) // ends this.app.get
   } // ends sigRequestValidation
+  // ADDR: 1B5niobweEWa7VFApb6fZhDN2rGzpZga88
 
   /**
    *  Add NEW STAR to BLOCKCHAIN

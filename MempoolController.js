@@ -137,7 +137,7 @@ class MempoolController {
       let self = this;
       const sigVerAddr = req.body.address;
       const sigVerSig = req.body.signature;
-      let madeItInTime;
+      let madeItInTime = false;
       let currentTimeSigValid = new Date().getTime().toString().slice(0, -3);
       console.log(`sigRequestValidation: ADD VALID OBJECT and REMOVE TIMER... currentTimeSigValid: ${currentTimeSigValid}`);
       let timeElapsedSigValid = currentTimeSigValid - self.tempMempool[sigVerAddr].reqTimeStamp;
@@ -147,9 +147,10 @@ class MempoolController {
         madeItInTime = true;
         console.log("sigRequestValidation: Made it in time!")
       } else {
-        madeItInTime = true;
+        madeItInTime = false;
         console.log("sigRequestValidation: Ouch! TOO SLOW!!!")
       }
+      let sigVerStatus = 200;
       if ( self.tempMempool[sigVerAddr] ) {
         const sigVerMsg  = self.tempMempool[sigVerAddr].message
         console.log("sigRequestValidation: self.tempMempool[sigVerAddr].walletAddress: ", self.tempMempool[sigVerAddr].walletAddress);
@@ -162,9 +163,10 @@ class MempoolController {
         /*****************************************
          *  Signature Verification code...
          *****************************************/
-        try {
-          let sigIsValid = bitcoinMessage.verify(sigVerMsg, sigVerAddr, sigVerSig); // Library call...
+        try { // Library call...
+          let sigIsValid = bitcoinMessage.verify(sigVerMsg, sigVerAddr, sigVerSig);
           console.log(`sigRequestValidation: sigIsValid: ${sigIsValid}`)
+          console.log(`sigRequestValidation: madeItInTime: ${madeItInTime}`)
           if ( sigIsValid && madeItInTime) {
             // Set Return Message Contents
             let validAddrObj = new ValidatedAddrObj.ValidatedAddrObj(sigVerAddr); // Verified Address from req.body
@@ -173,27 +175,28 @@ class MempoolController {
             // Put MemObj in Mempool ARRAY
             self.mempoolValid[sigVerAddr] = validAddrObj;
             console.log("PUT IN: sigRequestValidation: self.mempoolValid[sigVerAddr]: ", self.mempoolValid[sigVerAddr]);
-            res.send(validAddrObj);
-            // self.tempMempool[sigVerAddr] = null;
-            // self.timeoutReqs[sigVerAddr] = null;
+            res.status(sigVerStatus).send(validAddrObj);
             self.removeAddrVailidationReq(sigVerAddr);
         } else {
-            res.send("Signature NOT valid!\n \
+            res.status(sigVerStatus).send({ sigVerError: "Signature NOT valid!\n \
             Re-enter Signature or\n \
-            Re-start with Address Verification step");
+            Re-start with Address Verification step" } );
           }
         }
         catch (error) { 
           if (error) {
-            console.log("bitcoinMessage.verify saw error: ", error);
-            res.send("bitcoinMessage.verify saw error: ", error);
+            sigVerStatus = 412; // Precondition Failed, my choice since error.status was undefined
+            console.log("bitcoinMessage.verify saw error: ", sigVerStatus);
+            console.log(error);
+            res.status(sigVerStatus).send({ sigVerError: "bitcoinMessage.verify saw error: 'Precondition Failed'-MWJ " });
           }
         }
       } else {
+        sigVerStatus = 408;
         console.log("sigRequestValidation TIMED OUT!\n \
         Re-start with Address Verification step");
-        res.send("Signature Validation Timed Out!\n \
-        Re-start with Address Verification step");
+        res.status(sigVerStatus).send({ sigVerError: "Signature Validation Timed Out!\n \
+        Re-start with Address Verification step"});
       }
     }) // ends this.app.get
   } // ends sigRequestValidation
@@ -213,16 +216,16 @@ class MempoolController {
       const starDataRA = req.body.star.ra;
       const starDataStory = req.body.star.story;
       console.log("addStarData: starDataAddr: ", starDataAddr);
-      console.log("addStarData: starDataDEC: ", starDataDEC);
-      console.log("addStarData: starDataRA: ", starDataRA);
-      console.log("addStarData: starDataStory: ", starDataStory);
+      // console.log("addStarData: starDataDEC: ", starDataDEC);
+      // console.log("addStarData: starDataRA: ", starDataRA);
+      // console.log("addStarData: starDataStory: ", starDataStory);
 
       /*****************************************
        * Check for only ONE STAR per request
        * to add a block to the chain...
        * 
        *****************************************/
-
+      // console.log("addStarData: self.mempoolValid[starDataAddr].status.address: ", self.mempoolValid[starDataAddr].status.address);
       if ( self.mempoolValid[starDataAddr] ) {
         console.log("addStarData: starDataAddr: ", starDataAddr)
         console.log("addStarData: self.mempoolValid[starDataAddr]: ", self.mempoolValid[starDataAddr]);
@@ -286,6 +289,9 @@ class MempoolController {
               addedBlock.body.star.storyDECODED = hex2ascii(addedBlock.body.star.storyENCODED);
               console.log("then #1: addStarData: addedBlock: ", addedBlock);
               res.send(addedBlock);
+              // NOW prevent a second star from being registered without ne validation request!
+              self.mempoolValid[starDataAddr] = null;
+              validateAddrState = false;
             })
             .catch((error) => {
               console.log("addStarData saw error", error);

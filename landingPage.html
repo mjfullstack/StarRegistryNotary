@@ -249,7 +249,7 @@
         $("#getBlockByHashForm").on("click", (e) => {
           e.preventDefault();
           $("#returnedBlockByHash").text("");
-          let queryURL = "/stars/hash" + $("#getHashValue").val()
+          let queryURL = "/stars/hash:" + $("#getHashValue").val()
           if ($("#getHashValue").val() === "" ) {
             alert("HASH value is Empty.\nPlease enter HASH value to retrieve...");
           } else {
@@ -272,7 +272,7 @@
         $("#getBlockByAddrForm").on("click", (e) => {
           e.preventDefault();
           $("#returnedBlockByAddr").text("");
-          let queryURL = "/stars/address" + $("#getAddrValue").val()
+          let queryURL = "/stars/address:" + $("#getAddrValue").val()
           if ($("#getAddrValue").val() === "" ) {
             alert("WALLET ADDRESS is Empty.\nPlease enter WALLET ADDRESS to retrieve...");
           } else {

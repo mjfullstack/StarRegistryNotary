@@ -320,7 +320,7 @@ class MempoolController {
    * Implement a GET Endpoint to retrieve a block by HASH
    */
   getBlockByHash() {
-    this.app.get("/stars/hash:hash", (req, res) => {
+    this.app.get("/stars/hash::hash", (req, res) => {
       // Add your code here
       let hash = req.params.hash;
       console.log("hash: :", hash)
@@ -357,7 +357,7 @@ class MempoolController {
    * Implement a GET Endpoint to retrieve a block by WALLET ADDRESS
    */
   getBlockByAddr() {
-    this.app.get("/stars/address:addr", (req, res) => {
+    this.app.get("/stars/address::addr", (req, res) => {
       // Add your code here
       let addr = req.params.addr;
       console.log("addr: ", addr);
